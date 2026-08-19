@@ -1,0 +1,149 @@
+openapi: 3.0.0
+paths:
+  /health:
+    get:
+      operationId: HealthController_check
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      tags:
+        - health
+  /conversations/{conversationId}/messages:
+    post:
+      operationId: ChatController_send
+      parameters:
+        - name: conversationId
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMessageDto'
+      responses:
+        '201':
+          description: Message persisted and published to Redis pub/sub for fan-out
+      tags:
+        - chat
+    get:
+      operationId: ChatController_list
+      parameters:
+        - name: conversationId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Paginated messages with seq > afterSeq, ordered ascending — the reconnect path
+      tags:
+        - chat
+  /conversations/{conversationId}/members/{email}:
+    get:
+      operationId: ChatController_getMember
+      parameters:
+        - name: conversationId
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: email
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Email is a member of this conversation (has sent into it at least once)
+        '404':
+          description: Email is not a member of this conversation
+      tags:
+        - chat
+  /conversations/{conversationId}/typing/{email}:
+    put:
+      operationId: ChatController_setTyping
+      parameters:
+        - name: conversationId
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: email
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Refreshes the 5s typing TTL key for this email in this conversation (Redis only)
+      tags:
+        - chat
+  /conversations/{conversationId}/typing:
+    get:
+      operationId: ChatController_getTyping
+      parameters:
+        - name: conversationId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Emails currently typing (TTL-derived, never persisted)
+      tags:
+        - chat
+  /presence/{email}:
+    put:
+      operationId: PresenceController_heartbeat
+      parameters:
+        - name: email
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Refreshes the 30s presence TTL key for this email (Redis only)
+      tags:
+        - presence
+    get:
+      operationId: PresenceController_read
+      parameters:
+        - name: email
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Whether the presence key is currently live
+      tags:
+        - presence
+info:
+  title: Chat Service API
+  description: >-
+    Persists chat messages with a monotonic per-conversation seq and fans them out via Redis pub/sub. Presence and
+    typing indicators live in Redis only (TTL, never persisted).
+  version: 0.1.0
+  contact: {}
+tags: []
+servers: []
+components:
+  schemas:
+    CreateMessageDto:
+      type: object
+      properties:
+        senderEmail:
+          type: string
+          example: alice@example.com
+          description: Sender user email
+        body:
+          type: string
+          example: hey, you there?
+      required:
+        - senderEmail
+        - body
