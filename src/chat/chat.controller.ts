@@ -10,9 +10,10 @@ import {
   Put,
   Query,
 } from '@nestjs/common';
-import { ApiCreatedResponse, ApiNoContentResponse, ApiNotFoundResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { ApiCreatedResponse, ApiNoContentResponse, ApiNotFoundResponse, ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { ChatService } from './chat.service';
 import { CreateMessageDto } from './dto/create-message.dto';
+import { ChatMessagePageResponse, ChatMessageResponse } from './dto/chat-message.response';
 
 @ApiTags('chat')
 @Controller('conversations')
@@ -20,13 +21,29 @@ export class ChatController {
   constructor(private readonly service: ChatService) {}
 
   @Post(':conversationId/messages')
-  @ApiCreatedResponse({ description: 'Message persisted and published to Redis pub/sub for fan-out' })
+  @ApiCreatedResponse({
+    type: ChatMessageResponse,
+    description: 'Message persisted and published to Redis pub/sub for fan-out',
+  })
   send(@Param('conversationId') conversationId: string, @Body() dto: CreateMessageDto) {
     return this.service.sendMessage(conversationId, dto);
   }
 
   @Get(':conversationId/messages')
-  @ApiOkResponse({ description: 'Paginated messages with seq > afterSeq, ordered ascending — the reconnect path' })
+  // Declared explicitly: bare @Query() params carry no metadata, so without
+  // these the generated openapi.yaml drops the query contract entirely.
+  @ApiQuery({
+    name: 'afterSeq',
+    required: false,
+    schema: { type: 'integer', minimum: 0, default: 0 },
+    description: 'Return only messages with seq strictly greater than this value — the reconnect cursor',
+  })
+  @ApiQuery({ name: 'page', required: false, schema: { type: 'integer', minimum: 1, default: 1 } })
+  @ApiQuery({ name: 'limit', required: false, schema: { type: 'integer', minimum: 1, maximum: 100, default: 20 } })
+  @ApiOkResponse({
+    type: ChatMessagePageResponse,
+    description: 'Paginated messages with seq > afterSeq, ordered ascending — the reconnect path',
+  })
   list(
     @Param('conversationId') conversationId: string,
     @Query('afterSeq') afterSeq = '0',

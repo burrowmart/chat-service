@@ -27,6 +27,10 @@ paths:
       responses:
         '201':
           description: Message persisted and published to Redis pub/sub for fan-out
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatMessageResponse'
       tags:
         - chat
     get:
@@ -37,9 +41,36 @@ paths:
           in: path
           schema:
             type: string
+        - name: limit
+          required: false
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: page
+          required: false
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: afterSeq
+          required: false
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          description: Return only messages with seq strictly greater than this value — the reconnect cursor
       responses:
         '200':
           description: Paginated messages with seq > afterSeq, ordered ascending — the reconnect path
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatMessagePageResponse'
       tags:
         - chat
   /conversations/{conversationId}/members/{email}:
@@ -147,3 +178,47 @@ components:
       required:
         - senderEmail
         - body
+    ChatMessageResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        conversationId:
+          type: string
+        seq:
+          type: integer
+          minimum: 1
+          description: Monotonic per-conversation sequence number, gapless from 1
+        senderEmail:
+          type: string
+          format: email
+        body:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - conversationId
+        - seq
+        - senderEmail
+        - body
+        - createdAt
+    ChatMessagePageResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChatMessageResponse'
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required:
+        - data
+        - total
+        - page
+        - limit
