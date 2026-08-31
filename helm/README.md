@@ -63,7 +63,7 @@ helm upgrade chat-service ./chat-service/helm \
 |-------|---------|-------|
 | `base-service.image.tag` | `latest` | CI sets this to the git SHA |
 | `base-service.irsaRoleArn` | `arn:aws:iam::ACCOUNT_ID:role/chat-service-irsa` | Replace after `terraform apply` |
-| `base-service.secretsManagerPath` | `/prod/chat-service` | Must contain: `MONGO_URI`, `REDIS_URL`, `COGNITO_USER_POOL_ID`, `COGNITO_CLIENT_ID`, `JWT_SECRET` |
+| `base-service.secretsManagerPath` | `/prod/chat-service` | Must contain: `MONGO_URI`, `REDIS_URL`, `JWT_SECRET` |
 | `base-service.opaAddress` | `opa-pdp.opa-system.svc.cluster.local:9191` | OPA DaemonSet ClusterIP; `failure_mode_allow: false` enforced |
 | `base-service.ingress.host` | `chat-service.internal.archtenet.com` | Internal only — Cloudflare Tunnel entry point |
 | `base-service.replicaCount` | `2` | HPA overrides at runtime (min 2, max 10) |

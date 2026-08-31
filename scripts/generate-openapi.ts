@@ -19,9 +19,8 @@ import * as yaml from 'js-yaml';
 // Defaults so the script is runnable without compose. These MUST be assigned
 // before app.module is loaded: its ConfigModule.forRoot() call runs Joi at
 // module-evaluation time, and a static `import { AppModule }` would be hoisted
-// above these lines — leaving AUTH_DISABLED unset, which makes COGNITO_ISSUER
-// and COGNITO_AUDIENCE required and fails validation. Hence the dynamic import
-// inside generate() below.
+// above these lines — leaving MONGO_URI unset and failing validation. Hence
+// the dynamic import inside generate() below.
 process.env.MONGO_URI ??= 'mongodb://localhost:27017/chat-service';
 process.env.REDIS_URL ??= 'redis://localhost:6379';
 process.env.AUTH_DISABLED ??= 'true';
